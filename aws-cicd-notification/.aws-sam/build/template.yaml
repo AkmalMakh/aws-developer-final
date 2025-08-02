@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM app for image upload notification
+Resources:
+  UploadsNotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Akmalkhon-UploadsNotificationFunction
+      CodeUri: UploadsNotificationFunction
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Environment:
+        Variables:
+          TOPIC_ARN:
+            Ref: NotificationTopic
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue:
+              Fn::GetAtt:
+              - UploadQueue
+              - Arn
+      Policies:
+      - SNSPublishMessagePolicy:
+          TopicName:
+            Fn::GetAtt:
+            - NotificationTopic
+            - TopicName
+      - SQSPollerPolicy:
+          QueueName:
+            Fn::GetAtt:
+            - UploadQueue
+            - QueueName
+      - CloudWatchPutMetricPolicy: {}
+    Metadata:
+      SamResourceId: UploadsNotificationFunction
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+  UploadQueue:
+    Type: AWS::SQS::Queue

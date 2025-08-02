@@ -1,0 +1,12 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "Akmalkhon-UploadNotification"
+resolve_s3 = true
+s3_prefix = "Akmalkhon-UploadNotification"
+region = "us-east-1"
+profile = "Akmal_Makhmudov"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+image_repositories = []

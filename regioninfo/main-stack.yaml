@@ -1,0 +1,218 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Full infrastructure with ALB, Auto Scaling Group, EC2, RDS in private subnets, S3 access.
+
+Parameters:
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet::Id
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet::Id
+  S3Bucket:
+    Type: String
+  S3JarKey:
+    Type: String
+  DBMasterPassword:
+    Type: String
+    NoEcho: true
+    Description: MySQL master password (will not be displayed)
+
+Resources:
+
+  ALBSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: ALB SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  EC2SG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: EC2 SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref ALBSG
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0 
+
+  RDSSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: RDS SG
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref EC2SG
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private subnets
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: mysql
+      MasterUsername: admin
+      MasterUserPassword: !Ref DBMasterPassword
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      DBName: imageapp
+      VPCSecurityGroups:
+        - !Ref RDSSG
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      PubliclyAccessible: false
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub arn:aws:s3:::${S3Bucket}/${S3JarKey}
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        InstanceType: t2.micro
+        ImageId: ami-066ca756e8d29767d
+        KeyName: akmal 
+        SecurityGroupIds:
+          - !Ref EC2SG
+        IamInstanceProfile:
+          Arn: !GetAtt InstanceProfile.Arn
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            rpm --import https://packages.adoptium.net/artifactory/api/gpg/key/public
+            tee /etc/yum.repos.d/adoptium.repo > /dev/null <<EOF
+            [Adoptium]
+            name=Eclipse Temurin
+            baseurl=https://packages.adoptium.net/artifactory/rpm/amazonlinux/2/x86_64
+            enabled=1
+            gpgcheck=1
+            gpgkey=https://packages.adoptium.net/artifactory/api/gpg/key/public
+            EOF
+            yum clean all
+            yum install -y temurin-17-jdk
+            mkdir -p /home/ec2-user/app/uploads
+            chown -R ec2-user:ec2-user /home/ec2-user/app
+            chmod -R 755 /home/ec2-user/app
+            aws s3 cp s3://${S3Bucket}/${S3JarKey} /home/ec2-user/app/app.jar
+            nohup java -jar /home/ec2-user/app/app.jar > /home/ec2-user/app/app.log 2>&1 &
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1   # us-east-1a
+        - !Ref PublicSubnet2   # us-east-1b
+      MinSize: "1"
+      MaxSize: "2"
+      DesiredCapacity: "2"
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      HealthCheckType: EC2
+      HealthCheckGracePeriod: 300
+      Tags:
+        - Key: Name
+          Value: AppInstance
+          PropagateAtLaunch: true
+
+  
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref ALBSG
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Port: 8080
+      Protocol: HTTP
+      TargetType: instance
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: traffic-port
+      HealthCheckPath: /actuator/health
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+
+  UploadsNotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "akmal-UploadsNotificationQueue"
+
+  UploadsNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "akmal-UploadsNotificationTopic"
+      Subscription: []
+
+Outputs:
+  LoadBalancerDNS:
+    Description: ALB DNS Name
+    Value: !GetAtt ALB.DNSName
+  
+  QueueURL:
+    Description: URL of the created SQS Queue
+    Value: !Ref UploadsNotificationQueue
+
+  TopicARN:
+    Description: ARN of the created SNS Topic
+    Value: !Ref UploadsNotificationTopic
