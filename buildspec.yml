@@ -29,6 +29,7 @@ phases:
       - echo "📦 Pushing Docker image to ECR"
       - docker push 151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp:latest
 
+
 artifacts:
   base-directory: aws-cicd-notification
   files:
