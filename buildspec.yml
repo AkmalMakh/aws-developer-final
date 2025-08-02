@@ -21,11 +21,8 @@ phases:
       - docker tag akmal/webapp:latest 151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp:latest
       - cd ../aws-cicd-notification
       - echo "🧱 Building and packaging Lambda"
-      - sam build
-      - sam package \
-          --template-file template.yaml \
-          --s3-bucket akmal-makhmudov-bucket \
-          --output-template-file packaged.yaml
+      - sam build --template-file template.yaml
+      - sam package --s3-bucket akmal-makhmudov-bucket --output-template-file packaged.yaml
   post_build:
     commands:
       - echo "📦 Pushing Docker image to ECR"
