@@ -34,4 +34,4 @@ phases:
 artifacts:
   base-directory: .
   files:
-    - uploads_notification/packaged.yaml
+    - aws-cicd-notification/uploads_notification/packaged.yaml
