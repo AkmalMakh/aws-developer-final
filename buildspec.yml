@@ -8,10 +8,12 @@ phases:
     commands:
       - echo "✅ Installing AWS SAM CLI"
       - pip install aws-sam-cli
+
   pre_build:
     commands:
       - echo "🔐 Logging into Amazon ECR"
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 151182332702.dkr.ecr.us-east-1.amazonaws.com
+
   build:
     commands:
       - echo "⚙️ Building Docker image"
@@ -20,9 +22,13 @@ phases:
       - docker build -t akmal/webapp .
       - docker tag akmal/webapp:latest 151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp:latest
       - cd ../aws-cicd-notification
-      - echo "🧱 Building and packaging Lambda"
+      - echo "🧱 Building Lambda"
       - sam build --template-file uploads_notification/template.yaml
-      - sam package --s3-bucket akmal-makhmudov-bucket --output-template-file aws-cicd-notification/packaged.yaml
+      - cd ../
+      - echo "📦 Packaging Lambda"
+      - sam package --s3-bucket akmal-makhmudov-bucket \
+          --template-file aws-cicd-notification/uploads_notification/template.yaml \
+          --output-template-file aws-cicd-notification/packaged.yaml
 
   post_build:
     commands:
