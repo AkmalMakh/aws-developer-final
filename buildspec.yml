@@ -6,15 +6,15 @@ phases:
       java: corretto17
       python: 3.12
     commands:
-      - echo "✅ Installing SAM CLI"
+      - echo "✅ Installing AWS SAM CLI"
       - pip install aws-sam-cli
   pre_build:
     commands:
-      - echo "🔧 Logging in to Amazon ECR"
+      - echo "🔐 Logging into Amazon ECR"
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 151182332702.dkr.ecr.us-east-1.amazonaws.com
   build:
     commands:
-      - echo "🚧 Building Spring Boot Docker image"
+      - echo "⚙️ Building Docker image"
       - cd regioninfo
       - ./gradlew build
       - docker build -t akmal/webapp .
@@ -22,11 +22,15 @@ phases:
       - cd ../aws-cicd-notification
       - echo "🧱 Building and packaging Lambda"
       - sam build --template-file template.yaml
-      - sam package --s3-bucket akmal-makhmudov-bucket --output-template-file packaged.yaml
+      - sam package \
+          --s3-bucket akmal-makhmudov-bucket \
+          --output-template-file packaged.yaml
   post_build:
     commands:
       - echo "📦 Pushing Docker image to ECR"
       - docker push 151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp:latest
+
 artifacts:
+  base-directory: aws-cicd-notification
   files:
-    - aws-cicd-notification/packaged.yaml
+    - packaged.yaml
