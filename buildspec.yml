@@ -22,9 +22,8 @@ phases:
       - cd ../aws-cicd-notification
       - echo "🧱 Building and packaging Lambda"
       - sam build --template-file uploads_notification/template.yaml
-      - sam package \
-          --s3-bucket akmal-makhmudov-bucket \
-          --output-template-file uploads_notification/packaged.yaml
+      - sam package --s3-bucket akmal-makhmudov-bucket --output-template-file uploads_notification/packaged.yaml
+
   post_build:
     commands:
       - echo "📦 Pushing Docker image to ECR"
