@@ -6,6 +6,7 @@ phases:
       java: corretto17
       python: 3.12
     commands:
+      - set -e
       - echo "✅ Installing AWS SAM CLI"
       - pip install aws-sam-cli
 
@@ -15,27 +16,30 @@ phases:
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 151182332702.dkr.ecr.us-east-1.amazonaws.com
       - IMAGE_TAG=latest
       - ECR_REPO=151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp
-      - CONTAINER_NAME=akmal-webapp   # Must match ECS task definition
+      - CONTAINER_NAME=akmal-webapp  # must match ECS task definition
 
   build:
     commands:
       - echo "🛠 Building Docker image"
-      - cd regioninfo
+      - pushd regioninfo
+      - chmod +x ./gradlew || true
       - ./gradlew build
       - docker build -t akmal/webapp .
       - docker tag akmal/webapp:latest $ECR_REPO:$IMAGE_TAG
-      - cd ../aws-cicd-notification
+      - popd
       - echo "📦 Building and packaging Lambda"
+      - pushd aws-cicd-notification
       - sam build --template-file uploads_notification/template.yaml
       - sam package --template-file .aws-sam/build/template.yaml --s3-bucket akmal-makhmudov-bucket --output-template-file uploads_notification/packaged.yaml
+      - popd
 
   post_build:
     commands:
       - echo "🚀 Pushing Docker image to ECR"
       - docker push $ECR_REPO:$IMAGE_TAG
       - echo "📄 Creating imagedefinitions.json"
-      - cd ..  # move to root so file is created at correct ZIP level
       - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$ECR_REPO:$IMAGE_TAG\"}]" > imagedefinitions.json
+      - echo "✅ Build and packaging complete!"
 
 artifacts:
   base-directory: .
