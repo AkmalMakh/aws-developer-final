@@ -10,7 +10,7 @@ Resources:
       CodeUri: .
       Handler: app.lambda_handler
       Runtime: python3.12
-      AutoPublishAlias: live  # ✅ Required for traffic shifting
+      # AutoPublishAlias: live  # ✅ Required for traffic shifting
       Environment:
         Variables:
           TOPIC_ARN: !Ref NotificationTopic
@@ -25,13 +25,13 @@ Resources:
         - SQSPollerPolicy:
             QueueName: !GetAtt UploadQueue.QueueName
         - CloudWatchPutMetricPolicy: {}
-      DeploymentPreference:
-        Type: Linear10PercentEvery1Minute  # ✅ Traffic shifting strategy
-        Alarms:
-          - !Ref UploadsNotificationErrorAlarm
-        Hooks:
-          PreTraffic: !Ref PreTrafficHook
-          PostTraffic: !Ref PostTrafficHook
+      # DeploymentPreference:
+      #   Type: Linear10PercentEvery1Minute  # ✅ Traffic shifting strategy
+      #   Alarms:
+      #     - !Ref UploadsNotificationErrorAlarm
+      #   Hooks:
+      #     PreTraffic: !Ref PreTrafficHook
+      #     PostTraffic: !Ref PostTrafficHook
 
   NotificationTopic:
     Type: AWS::SNS::Topic
@@ -39,52 +39,52 @@ Resources:
   UploadQueue:
     Type: AWS::SQS::Queue
 
-  UploadsNotificationErrorAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: UploadsNotificationErrors
-      MetricName: Errors
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanThreshold
-      Dimensions:
-        - Name: FunctionName
-          Value: !Ref UploadsNotificationFunction
+  # UploadsNotificationErrorAlarm:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     AlarmName: UploadsNotificationErrors
+  #     MetricName: Errors
+  #     Namespace: AWS/Lambda
+  #     Statistic: Sum
+  #     Period: 60
+  #     EvaluationPeriods: 1
+  #     Threshold: 1
+  #     ComparisonOperator: GreaterThanThreshold
+  #     Dimensions:
+  #       - Name: FunctionName
+  #         Value: !Ref UploadsNotificationFunction
 
-  PreTrafficHook:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: PreTrafficHookFunction
-      Handler: pre_traffic.lambda_handler
-      Runtime: python3.12
-      CodeUri: hooks/
-      Timeout: 5
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - logs:CreateLogGroup
-                - logs:CreateLogStream
-                - logs:PutLogEvents
-              Resource: "*"
+  # PreTrafficHook:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: PreTrafficHookFunction
+  #     Handler: pre_traffic.lambda_handler
+  #     Runtime: python3.12
+  #     CodeUri: hooks/
+  #     Timeout: 5
+  #     Policies:
+  #       - Statement:
+  #           - Effect: Allow
+  #             Action:
+  #               - logs:CreateLogGroup
+  #               - logs:CreateLogStream
+  #               - logs:PutLogEvents
+  #             Resource: "*"
 
-  PostTrafficHook:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: PostTrafficHookFunction
-      Handler: post_traffic.lambda_handler
-      Runtime: python3.12
-      CodeUri: hooks/
-      Timeout: 5
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - logs:CreateLogGroup
-                - logs:CreateLogStream
-                - logs:PutLogEvents
-              Resource: "*"
+  # PostTrafficHook:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: PostTrafficHookFunction
+  #     Handler: post_traffic.lambda_handler
+  #     Runtime: python3.12
+  #     CodeUri: hooks/
+  #     Timeout: 5
+  #     Policies:
+  #       - Statement:
+  #           - Effect: Allow
+  #             Action:
+  #               - logs:CreateLogGroup
+  #               - logs:CreateLogStream
+  #               - logs:PutLogEvents
+  #             Resource: "*"
 
