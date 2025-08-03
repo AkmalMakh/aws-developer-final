@@ -15,7 +15,7 @@ phases:
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 151182332702.dkr.ecr.us-east-1.amazonaws.com
       - IMAGE_TAG=latest
       - ECR_REPO=151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp
-      - CONTAINER_NAME=webapp   # Must match ECS task definition
+      - CONTAINER_NAME=akmal-webapp   # Must match ECS task definition
 
   build:
     commands:
