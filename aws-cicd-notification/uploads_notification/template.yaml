@@ -11,7 +11,7 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.12
 
-      # Enable alias-based versioning (safes and production-friendly)
+      # Enable alias-based versioning (safe and production-friendly)
       AutoPublishAlias: live
 
       Environment:
