@@ -11,27 +11,33 @@ phases:
 
   pre_build:
     commands:
-      - echo "🔐 Logging into Amazon - ECR"
+      - echo "🔐 Logging into Amazon ECR"
       - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 151182332702.dkr.ecr.us-east-1.amazonaws.com
+      - IMAGE_TAG=latest
+      - ECR_REPO=151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp
+      - CONTAINER_NAME=webapp   # <-- must match your ECS task definition container name
 
   build:
     commands:
-      - echo "Building Docker image"
+      - echo "🛠 Building Docker image"
       - cd regioninfo
       - ./gradlew build
       - docker build -t akmal/webapp .
-      - docker tag akmal/webapp:latest 151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp:latest
+      - docker tag akmal/webapp:latest $ECR_REPO:$IMAGE_TAG
       - cd ../aws-cicd-notification
-      - echo " Building and packaging Lambda"
+      - echo "📦 Building and packaging Lambda"
       - sam build --template-file uploads_notification/template.yaml
       - sam package --template-file .aws-sam/build/template.yaml --s3-bucket akmal-makhmudov-bucket --output-template-file uploads_notification/packaged.yaml
 
   post_build:
     commands:
-      - echo " Pushing Docker image to  ECR"
-      - docker push 151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp:latest
+      - echo "🚀 Pushing Docker image to ECR"
+      - docker push $ECR_REPO:$IMAGE_TAG
+      - echo "📄 Creating imagedefinitions.json"
+      - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$ECR_REPO:$IMAGE_TAG\"}]" > imagedefinitions.json
 
 artifacts:
   base-directory: .
   files:
     - aws-cicd-notification/uploads_notification/packaged.yaml
+    - imagedefinitions.json
