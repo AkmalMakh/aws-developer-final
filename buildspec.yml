@@ -40,7 +40,7 @@ phases:
       - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$ECR_REPO:$IMAGE_TAG\"}]" > imagedefinitions.json
       - echo "📤 Deploying ECS Fargate + RDS stack"
       - aws cloudformation deploy \
-          --template-file ecs-fargate-template.yaml \
+          --template-file main-stack-final.yaml \
           --stack-name akmal-ecs-fargate-stack \
           --capabilities CAPABILITY_NAMED_IAM \
           --parameter-overrides \
