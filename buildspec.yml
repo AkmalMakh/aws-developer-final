@@ -38,30 +38,15 @@ phases:
       - docker push $ECR_REPO:$IMAGE_TAG
       - echo "📄 Creating imagedefinitions.json"
       - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$ECR_REPO:$IMAGE_TAG\"}]" > imagedefinitions.json
+      - echo "📝 Generating main-stack-final.yaml from base template"
+      - cp main-stack-base.yaml main-stack-final.yaml
+      - sed -i "s|REPLACE_IMAGE_URL|$ECR_REPO:$IMAGE_TAG|g" main-stack-final.yaml
       - echo "✅ Deployment build complete!"
 
-      # - echo "🚀 Pushing Docker image to ECR"
-      # - docker push $ECR_REPO:$IMAGE_TAG
-      # - echo "📄 Creating imagedefinitions.json"
-      # - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$ECR_REPO:$IMAGE_TAG\"}]" > imagedefinitions.json
-      # - echo "📤 Deploying ECS Fargate + RDS stack"
-      # - aws cloudformation deploy \
-      #     --template-file main-stack-final.yaml \
-      #     --stack-name akmal-ecs-fargate-stack \
-      #     --capabilities CAPABILITY_NAMED_IAM \
-      #     --parameter-overrides \
-      #         ImageUrl=$ECR_REPO:$IMAGE_TAG \
-      #         DBUsername=admin \
-      #         DBPassword=Admin123$ \
-      #         VPC=vpc-03b0687b56e5e4284 \
-      #         PublicSubnetA=subnet-0c54a03469761cbd2 \
-      #         PublicSubnetB=subnet-06743ac42e7cf5ad8 \
-      #         PrivateSubnetA=subnet-08fde9a496b874bec \
-      #         PrivateSubnetB=subnet-0f75970e73d049f61
-      # - echo "✅ Deployment complete!"
 
 artifacts:
   base-directory: .
   files:
     - aws-cicd-notification/uploads_notification/packaged.yaml
+    - main-stack-final.yaml
     - imagedefinitions.json
