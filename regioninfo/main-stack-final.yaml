@@ -60,7 +60,7 @@ Resources:
       Port: 80
       Protocol: HTTP
       TargetType: ip
-      HealthCheckPath: /
+      HealthCheckPath: /actuator/health
       Name: akmal-target-group
 
   ALBListener:
