@@ -16,7 +16,7 @@ Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub "akmal-cluster-${AWS::StackName}"
+      ClusterName: !Sub "akmal-cluster-${AWS::StackName}-${AWS::Region}"
 
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
