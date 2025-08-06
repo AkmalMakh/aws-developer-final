@@ -15,6 +15,21 @@ java {
 
 repositories {
 	mavenCentral()
+
+    // Backup mirror of Maven Central (same artifacts, no auth, less throttled)
+    maven {
+        url "https://repo1.maven.org/maven2"
+    }
+
+    // Optional: AWS-specific mirror
+    maven {
+        url "https://aws.oss.sonatype.org/content/repositories/releases"
+    }
+
+    // Optional: JCenter fallback (legacy, but still serves some Spring deps)
+    maven {
+        url "https://jcenter.bintray.com/"
+    }
 }
 
 dependencies {
