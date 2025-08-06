@@ -61,7 +61,7 @@ Resources:
       Protocol: HTTP
       TargetType: ip
       HealthCheckPath: /actuator/health
-      Name: akmal-target-group
+      Name: !Sub "akmal-target-group-${AWS::StackName}"
 
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
