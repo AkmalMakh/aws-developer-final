@@ -14,32 +14,33 @@ java {
 }
 
 repositories {
-    // 1. Gradle Plugin Portal (needed for plugins)
+    // Required for Gradle plugins
     gradlePluginPortal()
 
-    // 2. Maven Central (default source)
+    // Primary - Maven Central
     mavenCentral()
 
-    // 3. Mirror of Maven Central (fallback or load balance)
+    // Mirror of Maven Central (faster, less throttled)
     maven {
         url "https://repo1.maven.org/maven2"
     }
 
-    // 4. JitPack (for GitHub-based dependencies, optional)
-    maven { 
-        url "https://jitpack.io" 
-    }
-
-    // 5. AWS/Sonatype OSS repository (optional for AWS SDK artifacts)
+    // AWS-specific OSS mirror (optional)
     maven {
         url "https://aws.oss.sonatype.org/content/repositories/releases"
     }
 
-    // 6. JCenter fallback (legacy)
+    // JCenter fallback (legacy Spring deps)
     maven {
         url "https://jcenter.bintray.com/"
     }
+
+    // Optional: JitPack for GitHub libraries
+    maven {
+        url "https://jitpack.io"
+    }
 }
+
 
 dependencies {
     // ✅ AWS SDK BOM to manage AWS versions

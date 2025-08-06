@@ -9,6 +9,10 @@ phases:
       - set -e
       - echo "✅ Installing AWS SAM CLI"
       - pip install aws-sam-cli
+      - echo "✅ Setting Gradle properties to avoid daemon & parallel mode in CI"
+      - mkdir -p ~/.gradle
+      - echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
+      - echo "org.gradle.parallel=false" >> ~/.gradle/gradle.properties
 
   pre_build:
     commands:
@@ -23,26 +27,38 @@ phases:
       - echo "🛠 Building Docker image"
       - cd regioninfo
       - chmod +x ./gradlew || true
+      - echo "☁️ Setting up fallback repositories (Maven Central mirrors)"
+      - mkdir -p ~/.gradle/init.d
+      - |
+        cat <<EOF > ~/.gradle/init.d/maven-repo-mirrors.gradle
+        allprojects {
+            repositories {
+                mavenCentral()
+                maven { url 'https://repo1.maven.org/maven2' }
+                maven { url 'https://aws.oss.sonatype.org/content/repositories/releases' }
+                maven { url 'https://jcenter.bintray.com/' }
+            }
+        }
+        EOF
       - ./gradlew build
       - docker build -t akmal/webapp .
       - docker tag akmal/webapp:latest $ECR_REPO:$IMAGE_TAG
       - cd ../aws-cicd-notification
-      - echo " Building and packaging Lambda"
+      - echo "🌀 Building and packaging Lambda"
       - sam build --template-file uploads_notification/template.yaml
       - sam package --template-file .aws-sam/build/template.yaml --s3-bucket akmal-makhmudov-bucket --output-template-file uploads_notification/packaged.yaml
       - cd ../  # back to root
 
   post_build:
     commands:
-      - echo " Pushing Docker image to ECR"
+      - echo "📤 Pushing Docker image to ECR"
       - docker push $ECR_REPO:$IMAGE_TAG
-      - echo " Creating imagedefinitions.json"
+      - echo "🛠 Creating imagedefinitions.json"
       - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$ECR_REPO:$IMAGE_TAG\"}]" > imagedefinitions.json
       - echo "📝 Generating main-stack-final.yaml from base template"
       - cp main-stack-base.yaml main-stack-final.yaml
       - sed -i "s|REPLACE_IMAGE_URL|$ECR_REPO:$IMAGE_TAG|g" main-stack-final.yaml
       - echo "✅ Deployment build complete!"
-
 
 artifacts:
   base-directory: .
@@ -50,3 +66,7 @@ artifacts:
     - aws-cicd-notification/uploads_notification/packaged.yaml
     - main-stack-final.yaml
     - imagedefinitions.json
+
+cache:
+  paths:
+    - '/root/.gradle/**/*'
