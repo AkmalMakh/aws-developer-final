@@ -27,7 +27,7 @@ phases:
       - docker build -t akmal/webapp .
       - docker tag akmal/webapp:latest $ECR_REPO:$IMAGE_TAG
       - cd ../aws-cicd-notification
-      - echo "📦 Building and packaging Lambda"
+      - echo " Building and packaging Lambda"
       - sam build --template-file uploads_notification/template.yaml
       - sam package --template-file .aws-sam/build/template.yaml --s3-bucket akmal-makhmudov-bucket --output-template-file uploads_notification/packaged.yaml
       - cd ../  # back to root
