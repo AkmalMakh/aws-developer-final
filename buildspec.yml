@@ -36,7 +36,7 @@ phases:
     commands:
       - echo " Pushing Docker image to ECR"
       - docker push $ECR_REPO:$IMAGE_TAG
-      - echo "📄 Creating imagedefinitions.json"
+      - echo " Creating imagedefinitions.json"
       - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$ECR_REPO:$IMAGE_TAG\"}]" > imagedefinitions.json
       - echo "📝 Generating main-stack-final.yaml from base template"
       - cp main-stack-base.yaml main-stack-final.yaml
