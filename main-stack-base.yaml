@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ECS Fargate Service with Application Load Balancer (Port 8080, Secure SG Setup)
+Description: ECS Fargate Service with ALB and MySQL RDS in Private Subnets
 
 Parameters:
   VPC:
@@ -11,6 +11,16 @@ Parameters:
   PublicSubnetB:
     Type: AWS::EC2::Subnet::Id
     Default: subnet-06743ac42e7cf5ad8
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet::Id
+  DBUsername:
+    Type: Admin
+  DBPassword:
+    Type: Admin123$
+  DBName:
+    Type: imageapp
 
 Resources:
   ECSCluster:
@@ -113,6 +123,39 @@ Resources:
         - ContainerName: akmal-webapp
           ContainerPort: 8080
           TargetGroupArn: !Ref ALBTargetGroup
+
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECS App SG for DB
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref ECSServiceSecurityGroup
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets for MySQL DB
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+
+  MySQLInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: !Ref DBName
+      AllocatedStorage: 20
+      DBInstanceClass: db.t4g.micro
+      Engine: mysql
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      PubliclyAccessible: false
+      VPCSecurityGroups:
+        - !Ref AppSecurityGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
 
 Outputs:
   LoadBalancerDNS:
