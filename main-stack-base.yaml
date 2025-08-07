@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ECS Fargate Service with Application Load Balancer
+Description: ECS Fargate Service with Application Load Balancer (Port 8080, Secure SG Setup)
 
 Parameters:
   VPC:
@@ -16,7 +16,7 @@ Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub "akmal-cluster-${AWS::StackName}-${AWS::Region}"
+      ClusterName: akmal-cluster
 
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
@@ -34,13 +34,13 @@ Resources:
   ECSServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow inbound HTTP
+      GroupDescription: Allow traffic from ALB on port 8080
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: sg-0b5b0a9bf2a0b9543
 
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -51,23 +51,26 @@ Resources:
         - !Ref PublicSubnetA
         - !Ref PublicSubnetB
       SecurityGroups:
-        - !Ref ECSServiceSecurityGroup
+        - sg-0b5b0a9bf2a0b9543 
 
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
+      Name: akmal-target-group
       VpcId: !Ref VPC
-      Port: 80
+      Port: 8080
       Protocol: HTTP
       TargetType: ip
       HealthCheckPath: /actuator/health
-      Name: !Sub "akmal-tgr-${AWS::StackName}"
+      HealthCheckProtocol: HTTP
+      Matcher:
+        HttpCode: 200-399
 
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref ALB
-      Port: 80
+      Port: 8080
       Protocol: HTTP
       DefaultActions:
         - Type: forward
@@ -84,9 +87,9 @@ Resources:
       ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: akmal-webapp
-          Image: REPLACE_IMAGE_URL
+          Image: <TO_BE_OVERRIDDEN_BY_PIPELINE>
           PortMappings:
-            - ContainerPort: 80
+            - ContainerPort: 8080
           Essential: true
 
   ECSService:
@@ -108,7 +111,7 @@ Resources:
             - !Ref ECSServiceSecurityGroup
       LoadBalancers:
         - ContainerName: akmal-webapp
-          ContainerPort: 80
+          ContainerPort: 8080
           TargetGroupArn: !Ref ALBTargetGroup
 
 Outputs:
