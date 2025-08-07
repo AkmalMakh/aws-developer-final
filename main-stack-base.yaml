@@ -87,7 +87,7 @@ Resources:
       ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: akmal-webapp
-          Image: <TO_BE_OVERRIDDEN_BY_PIPELINE>
+          Image: REPLACE_IMAGE_URL
           PortMappings:
             - ContainerPort: 8080
           Essential: true
