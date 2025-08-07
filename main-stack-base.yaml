@@ -1,40 +1,41 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ECS Fargate Service with ALB and MySQL RDS in Private Subnets
+Description: ECS Fargate Service (Public) with ALB and MySQL RDS (Private)
 
 Parameters:
   VPC:
     Type: AWS::EC2::VPC::Id
     Default: vpc-03b0687b56e5e4284
+
   PublicSubnetA:
     Type: AWS::EC2::Subnet::Id
     Default: subnet-0c54a03469761cbd2
+
   PublicSubnetB:
     Type: AWS::EC2::Subnet::Id
     Default: subnet-06743ac42e7cf5ad8
+
   PrivateSubnetA:
     Type: AWS::EC2::Subnet::Id
     Default: subnet-08fde9a496b874bec
+
   PrivateSubnetB:
     Type: AWS::EC2::Subnet::Id
     Default: subnet-0f75970e73d049f61
+
   DBUsername:
     Type: String
     Default: admin
+
   DBPassword:
     Type: String
     NoEcho: true
     Default: Admin123$
+
   DBName:
     Type: String
     Default: imageapp
 
 Resources:
-  ECSLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: /ecs/akmal-webapp
-      RetentionInDays: 7
-
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
@@ -67,7 +68,7 @@ Resources:
   AppSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: ECS App SG for DB
+      GroupDescription: Allow ECS app to access RDS
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -135,18 +136,10 @@ Resources:
               Value: !Ref DBUsername
             - Name: DB_PASSWORD
               Value: !Ref DBPassword
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-group: /ecs/akmal-webapp
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: ecs
 
   ECSService:
     Type: AWS::ECS::Service
-    DependsOn:
-      - ALBListener
-      - MySQLInstance
+    DependsOn: ALBListener
     Properties:
       ServiceName: akmal-webapp-service
       Cluster: !Ref ECSCluster
@@ -156,10 +149,10 @@ Resources:
       TaskDefinition: !Ref TaskDefinition
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
+          AssignPublicIp: ENABLED
           Subnets:
-            - !Ref PrivateSubnetA
-            - !Ref PrivateSubnetB
+            - !Ref PublicSubnetA
+            - !Ref PublicSubnetB
           SecurityGroups:
             - !Ref ECSServiceSecurityGroup
       LoadBalancers:
@@ -177,7 +170,6 @@ Resources:
 
   MySQLInstance:
     Type: AWS::RDS::DBInstance
-    DeletionPolicy: Snapshot
     Properties:
       DBName: !Ref DBName
       AllocatedStorage: 20
@@ -192,5 +184,5 @@ Resources:
 
 Outputs:
   LoadBalancerDNS:
-    Description: DNS of the application load balancer
+    Description: Public DNS of the application load balancer
     Value: !GetAtt ALB.DNSName
