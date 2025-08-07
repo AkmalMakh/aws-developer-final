@@ -56,7 +56,7 @@ Resources:
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: akmal-target-group
+      Name: akmal-tr-group
       VpcId: !Ref VPC
       Port: 8080
       Protocol: HTTP
