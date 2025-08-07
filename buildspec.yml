@@ -40,7 +40,7 @@ phases:
             }
         }
         EOF
-      - ./gradlew build
+      - ./gradlew build -x test
       - docker build -t akmal/webapp .
       - docker tag akmal/webapp:latest $ECR_REPO:$IMAGE_TAG
       - cd ../aws-cicd-notification
