@@ -13,8 +13,10 @@ Parameters:
     Default: subnet-06743ac42e7cf5ad8
   PrivateSubnetA:
     Type: AWS::EC2::Subnet::Id
+    Default: subnet-08fde9a496b874bec
   PrivateSubnetB:
     Type: AWS::EC2::Subnet::Id
+    Default: subnet-0f75970e73d049f61
   DBUsername:
     Type: String
     Default: admin
