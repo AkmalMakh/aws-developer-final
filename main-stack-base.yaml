@@ -29,6 +29,12 @@ Parameters:
     Default: imageapp
 
 Resources:
+  ECSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/akmal-webapp
+      RetentionInDays: 7
+
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
@@ -58,6 +64,17 @@ Resources:
           ToPort: 8080
           SourceSecurityGroupId: sg-0b5b0a9bf2a0b9543
 
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECS App SG for DB
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref ECSServiceSecurityGroup
+
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -67,7 +84,7 @@ Resources:
         - !Ref PublicSubnetA
         - !Ref PublicSubnetB
       SecurityGroups:
-        - sg-0b5b0a9bf2a0b9543 
+        - sg-0b5b0a9bf2a0b9543
 
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -103,43 +120,52 @@ Resources:
       ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: akmal-webapp
-          Image: REPLACE_IMAGE_URL
+          Image: 151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp:latest
           PortMappings:
             - ContainerPort: 8080
           Essential: true
+          Environment:
+            - Name: DB_HOST
+              Value: !GetAtt MySQLInstance.Endpoint.Address
+            - Name: DB_PORT
+              Value: "3306"
+            - Name: DB_NAME
+              Value: !Ref DBName
+            - Name: DB_USER
+              Value: !Ref DBUsername
+            - Name: DB_PASSWORD
+              Value: !Ref DBPassword
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/akmal-webapp
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
 
   ECSService:
     Type: AWS::ECS::Service
-    DependsOn: ALBListener
+    DependsOn:
+      - ALBListener
+      - MySQLInstance
     Properties:
       ServiceName: akmal-webapp-service
       Cluster: !Ref ECSCluster
       LaunchType: FARGATE
       DesiredCount: 1
+      HealthCheckGracePeriodSeconds: 60
       TaskDefinition: !Ref TaskDefinition
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: DISABLED
           Subnets:
-            - !Ref PublicSubnetA
-            - !Ref PublicSubnetB
+            - !Ref PrivateSubnetA
+            - !Ref PrivateSubnetB
           SecurityGroups:
             - !Ref ECSServiceSecurityGroup
       LoadBalancers:
         - ContainerName: akmal-webapp
           ContainerPort: 8080
           TargetGroupArn: !Ref ALBTargetGroup
-
-  AppSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: ECS App SG for DB
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3306
-          ToPort: 3306
-          SourceSecurityGroupId: !Ref ECSServiceSecurityGroup
 
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -151,6 +177,7 @@ Resources:
 
   MySQLInstance:
     Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
     Properties:
       DBName: !Ref DBName
       AllocatedStorage: 20
