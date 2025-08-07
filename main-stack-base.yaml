@@ -16,7 +16,7 @@ Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: akmal-cluster
+      ClusterName: akmal-aws-cluster
 
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
