@@ -16,11 +16,15 @@ Parameters:
   PrivateSubnetB:
     Type: AWS::EC2::Subnet::Id
   DBUsername:
-    Type: Admin
+    Type: String
+    Default: admin
   DBPassword:
-    Type: Admin123$
+    Type: String
+    NoEcho: true
+    Default: Admin123$
   DBName:
-    Type: imageapp
+    Type: String
+    Default: imageapp
 
 Resources:
   ECSCluster:
