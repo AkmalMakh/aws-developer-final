@@ -5,7 +5,7 @@ Description: SAM app for image upload notification (standard deployment, no Code
 Parameters:
   UploadQueueArn:
     Type: String
-    Default: arn:aws:sqs:us-east-1:151182332702:akmal-aws-final-UploadQueue-wOoHE8hidste
+    Default: arn:aws:sqs:us-east-1:151182332702:akmal-aws-final-UploadQueue-W99LVHuaMY2d
     Description: ARN of the existing SQS queue
 
   UploadQueueName:
