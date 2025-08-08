@@ -141,7 +141,7 @@ TaskDefinition:
           - Name: DB_PASSWORD
             Value: !Ref DBPassword
           - Name: DB_PORT
-              Value: "3306"
+            Value: "3306"
           - Name: AWS_REGION
             Value: "us-east-1"
           - Name: LOAD_BALANCER_HOST
