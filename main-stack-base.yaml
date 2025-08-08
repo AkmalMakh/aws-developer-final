@@ -110,6 +110,7 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref ALBTargetGroup
 
+
 TaskDefinition:
   Type: AWS::ECS::TaskDefinition
   Properties:
