@@ -2,6 +2,27 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: SAM app for image upload notification (standard deployment, no CodeDeploy)
 
+Parameters:
+  UploadQueueArn:
+    Type: String
+    Default: arn:aws:sqs:us-east-1:151182332702:akmal-aws-final-UploadQueue-wOoHE8hidste
+    Description: ARN of the existing SQS queue
+
+  UploadQueueName:
+    Type: String
+    Default: akmal-aws-final-UploadQueue-wOoHE8hidste
+    Description: Name of the existing SQS queue
+
+  NotificationTopicArn:
+    Type: String
+    Default: arn:aws:sns:us-east-1:151182332702:akmal-aws-final-NotificationTopic-m36O0pYZK53r
+    Description: ARN of the existing SNS topic
+
+  NotificationTopicName:
+    Type: String
+    Default: akmal-aws-final-NotificationTopic-m36O0pYZK53r
+    Description: Name of the existing SNS topic
+
 Resources:
   UploadsNotificationFunction:
     Type: AWS::Serverless::Function
@@ -10,27 +31,29 @@ Resources:
       CodeUri: .
       Handler: app.lambda_handler
       Runtime: python3.12
-
-      # Enable alias-based versioning (safe and production-friendly)
       AutoPublishAlias: live
-
       Environment:
         Variables:
-          TOPIC_ARN: !Ref NotificationTopic
+          TOPIC_ARN: !Ref NotificationTopicArn
       Events:
         SQSTrigger:
           Type: SQS
           Properties:
-            Queue: !GetAtt UploadQueue.Arn
+            Queue: !Ref UploadQueueArn
       Policies:
         - SNSPublishMessagePolicy:
-            TopicName: !GetAtt NotificationTopic.TopicName
+            TopicName: !Ref NotificationTopicName
         - SQSPollerPolicy:
-            QueueName: !GetAtt UploadQueue.QueueName
+            QueueName: !Ref UploadQueueName
         - CloudWatchPutMetricPolicy: {}
 
-  NotificationTopic:
-    Type: AWS::SNS::Topic
+Outputs:
+  NotificationTopicArn:
+    Value: !Ref NotificationTopicArn
+    Export:
+      Name: akmal-notification-topic-arn
 
-  UploadQueue:
-    Type: AWS::SQS::Queue
+  UploadQueueArn:
+    Value: !Ref UploadQueueArn
+    Export:
+      Name: akmal-upload-queue-arn

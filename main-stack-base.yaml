@@ -35,6 +35,14 @@ Parameters:
     Type: String
     Default: imageapp
 
+  UploadQueueArn:
+    Type: String
+    Default: arn:aws:sqs:us-east-1:151182332702:akmal-uploads-queue
+
+  NotificationTopicArn:
+    Type: String
+    Default: arn:aws:sns:us-east-1:151182332702:akmal-uploads-notification
+
 Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
@@ -66,6 +74,8 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonRDSFullAccess
+        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
 
   ECSServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -154,6 +164,10 @@ Resources:
               Value: !GetAtt ALB.DNSName
             - Name: LOAD_BALANCER_PORT
               Value: "8080"
+            - Name: SQS_QUEUE_URL
+              Value: !Ref UploadQueueArn
+            - Name: SNS_TOPIC_ARN
+              Value: !Ref NotificationTopicArn
 
   ECSService:
     Type: AWS::ECS::Service
