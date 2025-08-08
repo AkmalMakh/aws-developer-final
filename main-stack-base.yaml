@@ -22,6 +22,10 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
     Default: subnet-0f75970e73d049f61
 
+  DBEndpoint:
+    Type: String
+    Default: akmal-aws-final-mysqlinstance-xqxkr1vuk0dc.c6zsa0ei03bh.us-east-1.rds.amazonaws.com
+
   DBUsername:
     Type: String
     Default: admin
@@ -44,6 +48,12 @@ Parameters:
     Default: arn:aws:sns:us-east-1:151182332702:akmal-aws-final-NotificationTopic-m36O0pYZK53r
 
 Resources:
+  ECSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/akmal-task
+      RetentionInDays: 7
+
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
@@ -151,7 +161,8 @@ Resources:
             - ContainerPort: 8080
           Environment:
             - Name: SPRING_DATASOURCE_URL
-              Value: !Sub "jdbc:mysql://${MySQLInstance.Endpoint.Address}:3306/${DBName}"
+              # Value: !Sub "jdbc:mysql://${MySQLInstance.Endpoint.Address}:3306/${DBName}"
+              Value: !Sub "jdbc:mysql://${DBEndpoint}:3306/${DBName}"
             - Name: DB_USER
               Value: !Ref DBUsername
             - Name: DB_PASSWORD
@@ -171,7 +182,7 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: /ecs/akmal-final-task
+              awslogs-group: /ecs/akmal-task
               awslogs-region: us-east-1
               awslogs-stream-prefix: akmal
 
@@ -198,27 +209,27 @@ Resources:
           ContainerPort: 8080
           TargetGroupArn: !Ref ALBTargetGroup
 
-  DBSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: Subnets for MySQL DB
-      SubnetIds:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
+  # DBSubnetGroup:
+  #   Type: AWS::RDS::DBSubnetGroup
+  #   Properties:
+  #     DBSubnetGroupDescription: Subnets for MySQL DB
+  #     SubnetIds:
+  #       - !Ref PrivateSubnetA
+  #       - !Ref PrivateSubnetB
 
-  MySQLInstance:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      DBName: !Ref DBName
-      AllocatedStorage: 20
-      DBInstanceClass: db.t4g.micro
-      Engine: mysql
-      MasterUsername: !Ref DBUsername
-      MasterUserPassword: !Ref DBPassword
-      PubliclyAccessible: false
-      VPCSecurityGroups:
-        - !Ref AppSecurityGroup
-      DBSubnetGroupName: !Ref DBSubnetGroup
+  # MySQLInstance:
+  #   Type: AWS::RDS::DBInstance
+  #   Properties:
+  #     DBName: !Ref DBName
+  #     AllocatedStorage: 20
+  #     DBInstanceClass: db.t4g.micro
+  #     Engine: mysql
+  #     MasterUsername: !Ref DBUsername
+  #     MasterUserPassword: !Ref DBPassword
+  #     PubliclyAccessible: false
+  #     VPCSecurityGroups:
+  #       - !Ref AppSecurityGroup
+  #     DBSubnetGroupName: !Ref DBSubnetGroup
 
 Outputs:
   LoadBalancerDNS:
