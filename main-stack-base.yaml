@@ -182,7 +182,6 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: /ecs/akmal-task
               awslogs-region: us-east-1
               awslogs-stream-prefix: akmal
 
