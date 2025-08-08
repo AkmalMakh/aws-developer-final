@@ -110,32 +110,43 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref ALBTargetGroup
 
-  TaskDefinition:
-    Type: AWS::ECS::TaskDefinition
-    Properties:
-      Family: akmal-task
-      RequiresCompatibilities: [FARGATE]
-      Cpu: 256
-      Memory: 512
-      NetworkMode: awsvpc
-      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
-      ContainerDefinitions:
-        - Name: akmal-webapp
-          Image: 151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp:latest
-          PortMappings:
-            - ContainerPort: 8080
-          Essential: true
-          Environment:
-            - Name: DB_HOST
-              Value: !GetAtt MySQLInstance.Endpoint.Address
-            - Name: DB_PORT
+TaskDefinition:
+  Type: AWS::ECS::TaskDefinition
+  Properties:
+    Family: akmal-task
+    RequiresCompatibilities: [FARGATE]
+    Cpu: 256
+    Memory: 512
+    NetworkMode: awsvpc
+    ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+    TaskRoleArn: !GetAtt ECSTaskRole.Arn
+    ContainerDefinitions:
+      - Name: akmal-webapp
+        Image: 151182332702.dkr.ecr.us-east-1.amazonaws.com/akmal/webapp:latest
+        Essential: true
+        PortMappings:
+          - ContainerPort: 8080
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: /ecs/akmal-webapp
+            awslogs-region: !Ref AWS::Region
+            awslogs-stream-prefix: ecs
+        Environment:
+          - Name: SPRING_DATASOURCE_URL
+            Value: !Sub "jdbc:mysql://${MySQLInstance.Endpoint.Address}:3306/${DBName}"
+          - Name: DB_USER
+            Value: !Ref DBUsername
+          - Name: DB_PASSWORD
+            Value: !Ref DBPassword
+          - Name: DB_PORT
               Value: "3306"
-            - Name: DB_NAME
-              Value: !Ref DBName
-            - Name: DB_USER
-              Value: !Ref DBUsername
-            - Name: DB_PASSWORD
-              Value: !Ref DBPassword
+          - Name: AWS_REGION
+            Value: "us-east-1"
+          - Name: LOAD_BALANCER_HOST
+            Value: !GetAtt ALB.DNSName
+          - Name: LOAD_BALANCER_PORT
+            Value: "8080"
 
   ECSService:
     Type: AWS::ECS::Service
