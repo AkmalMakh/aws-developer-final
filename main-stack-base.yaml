@@ -168,6 +168,12 @@ Resources:
               Value: !Ref UploadQueueArn
             - Name: SNS_TOPIC_ARN
               Value: !Ref NotificationTopicArn
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/akmal-final-task
+              awslogs-region: us-east-1
+              awslogs-stream-prefix: akmal
 
   ECSService:
     Type: AWS::ECS::Service
