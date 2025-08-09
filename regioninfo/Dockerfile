@@ -1,5 +1,5 @@
 # Use a lightweight OpenJDK image
-FROM public.ecr.aws/lts/ubuntu:latest
+FROM public.ecr.aws/amazoncorretto/amazoncorretto:17-alpine3.19
 
 # Set the working directory
 WORKDIR /app

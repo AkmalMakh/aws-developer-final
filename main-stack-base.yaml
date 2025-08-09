@@ -39,6 +39,14 @@ Parameters:
     Type: String
     Default: imageapp
 
+  DynamoDbTableName:
+    Type: String
+    Default: Akmal-ImageAnalytics
+
+  ImageAnalyticsTableArn:
+    Type: String
+    Default: arn:aws:dynamodb:us-east-1:151182332702:table/Akmal-ImageAnalytics
+
   UploadQueueUrl:
     Type: String
     Default: https://sqs.us-east-1.amazonaws.com/151182332702/akmal-aws-final-UploadQueue-wOoHE8hidste
@@ -86,7 +94,23 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonRDSFullAccess
         - arn:aws:iam::aws:policy/AmazonSQSFullAccess
         - arn:aws:iam::aws:policy/AmazonSNSFullAccess
-
+      Policies:
+        - PolicyName: DynamoDBImageAnalyticsRW
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:Query     
+                  - dynamodb:Scan         
+                Resource:
+                  - !Ref ImageAnalyticsTableArn
+                  - !Sub '${ImageAnalyticsTableArn}/index/*'
+        
   ECSServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -179,6 +203,8 @@ Resources:
               Value: !Ref UploadQueueUrl
             - Name: SNS_TOPIC_ARN
               Value: !Ref NotificationTopicArn
+            - Name: DDB_TABLE_NAME
+              Value: !Ref DynamoDbTableName
 
   ECSService:
     Type: AWS::ECS::Service
