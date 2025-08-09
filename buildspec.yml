@@ -51,7 +51,7 @@ phases:
 
   post_build:
     commands:
-      - echo "📤 Pushing Docker image to ECR"
+      - echo "Pushing Docker image to ECR"
       - docker push $ECR_REPO:$IMAGE_TAG
       - echo "🛠 Creating imagedefinitions.json"
       - echo "[{\"name\":\"$CONTAINER_NAME\",\"imageUri\":\"$ECR_REPO:$IMAGE_TAG\"}]" > imagedefinitions.json
