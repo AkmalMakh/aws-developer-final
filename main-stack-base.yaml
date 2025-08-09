@@ -22,9 +22,9 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
     Default: subnet-0f75970e73d049f61
 
-  # DBEndpoint:
-  #   Type: String
-  #   Default: akmal-aws-final-mysqlinstance-xqxkr1vuk0dc.c6zsa0ei03bh.us-east-1.rds.amazonaws.com
+  DBEndpoint:
+    Type: String
+    Default: akmal-aws-final-mysqlinstance-j0soqihk9uyq.c6zsa0ei03bh.us-east-1.rds.amazonaws.com
 
   DBUsername:
     Type: String
@@ -39,9 +39,9 @@ Parameters:
     Type: String
     Default: imageapp
 
-  UploadQueueArn:
+  UploadQueueUrl:
     Type: String
-    Default: arn:aws:sqs:us-east-1:151182332702:akmal-aws-final-UploadQueue-W99LVHuaMY2d
+    Default: https://sqs.us-east-1.amazonaws.com/151182332702/akmal-aws-final-UploadQueue-wOoHE8hidste
 
   NotificationTopicArn:
     Type: String
@@ -161,8 +161,8 @@ Resources:
             - ContainerPort: 8080
           Environment:
             - Name: SPRING_DATASOURCE_URL
-              Value: !Sub "jdbc:mysql://${MySQLInstance.Endpoint.Address}:3306/${DBName}"
-              # Value: !Sub "jdbc:mysql://${DBEndpoint}:3306/${DBName}"
+              # Value: !Sub "jdbc:mysql://${MySQLInstance.Endpoint.Address}:3306/${DBName}"
+              Value: !Sub "jdbc:mysql://${DBEndpoint}:3306/${DBName}"
             - Name: DB_USER
               Value: !Ref DBUsername
             - Name: DB_PASSWORD
@@ -176,7 +176,7 @@ Resources:
             - Name: LOAD_BALANCER_PORT
               Value: "8080"
             - Name: SQS_QUEUE_URL
-              Value: !Ref UploadQueueArn
+              Value: !Ref UploadQueueUrl
             - Name: SNS_TOPIC_ARN
               Value: !Ref NotificationTopicArn
 
@@ -203,27 +203,27 @@ Resources:
           ContainerPort: 8080
           TargetGroupArn: !Ref ALBTargetGroup
 
-  DBSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: Subnets for MySQL DB
-      SubnetIds:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
+  # DBSubnetGroup:
+  #   Type: AWS::RDS::DBSubnetGroup
+  #   Properties:
+  #     DBSubnetGroupDescription: Subnets for MySQL DB
+  #     SubnetIds:
+  #       - !Ref PrivateSubnetA
+  #       - !Ref PrivateSubnetB
 
-  MySQLInstance:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      DBName: !Ref DBName
-      AllocatedStorage: 20
-      DBInstanceClass: db.t4g.micro
-      Engine: mysql
-      MasterUsername: !Ref DBUsername
-      MasterUserPassword: !Ref DBPassword
-      PubliclyAccessible: false
-      VPCSecurityGroups:
-        - !Ref AppSecurityGroup
-      DBSubnetGroupName: !Ref DBSubnetGroup
+  # MySQLInstance:
+  #   Type: AWS::RDS::DBInstance
+  #   Properties:
+  #     DBName: !Ref DBName
+  #     AllocatedStorage: 20
+  #     DBInstanceClass: db.t4g.micro
+  #     Engine: mysql
+  #     MasterUsername: !Ref DBUsername
+  #     MasterUserPassword: !Ref DBPassword
+  #     PubliclyAccessible: false
+  #     VPCSecurityGroups:
+  #       - !Ref AppSecurityGroup
+  #     DBSubnetGroupName: !Ref DBSubnetGroup
 
 Outputs:
   LoadBalancerDNS:

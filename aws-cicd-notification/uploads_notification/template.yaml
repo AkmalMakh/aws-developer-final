@@ -39,21 +39,26 @@ Resources:
         SQSTrigger:
           Type: SQS
           Properties:
-            Queue: !Ref UploadQueueArn
+            Queue: !Ref UploadQueueArn   # expects ARN or URL; ARN is best
+            BatchSize: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
       Policies:
-        - SNSPublishMessagePolicy:
-            TopicName: !Ref NotificationTopicName
-        - SQSPollerPolicy:
-            QueueName: !Ref UploadQueueName
-        - CloudWatchPutMetricPolicy: {}
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+                - sqs:GetQueueUrl
+                - sqs:ChangeMessageVisibility
+              Resource: !Ref UploadQueueArn
+            - Effect: Allow
+              Action: sns:Publish
+              Resource: !Ref NotificationTopicArn
 
 Outputs:
-  NotificationTopicArn:
-    Value: !Ref NotificationTopicArn
-    Export:
-      Name: akmal-notification-topic-arn
-
-  UploadQueueArn:
+  UploadQueueArnOut:
     Value: !Ref UploadQueueArn
-    Export:
-      Name: akmal-upload-queue-arn
+  NotificationTopicArnOut:
+    Value: !Ref NotificationTopicArn
