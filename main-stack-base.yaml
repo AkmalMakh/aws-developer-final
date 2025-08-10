@@ -135,6 +135,8 @@ Resources:
 
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       Name: akmal-alb
       Scheme: internet-facing
@@ -245,6 +247,8 @@ Resources:
 
   MySQLInstance:
     Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
     Properties:
       DBName: !Ref DBName
       AllocatedStorage: 20
