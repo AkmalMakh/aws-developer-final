@@ -205,6 +205,12 @@ Resources:
               Value: !Ref NotificationTopicArn
             - Name: DDB_TABLE_NAME
               Value: !Ref DynamoDbTableName
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ECSLogGroup     
+              awslogs-region: us-east-1
+              awslogs-stream-prefix: web
 
   ECSService:
     Type: AWS::ECS::Service
